@@ -7,7 +7,7 @@ const port = 3000;
 
 app.use(express.json());
 
-const connectionString = process.env.DATABASE_URL;  'postgresql://chat_db_nezq_user:KcMxA6BB2ql4wcN26cuNydgJalo4cxOz@dpg-d2bg80be5dus7387nk7g-a.oregon-postgres.render.com/chat_db_nezq';
+const connectionString = process.env.DATABASE_URL;
 
 const client = new Client({
   connectionString,
