@@ -51,7 +51,10 @@ app.post('/register', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
         await client.query('INSERT INTO users (username, password_hash) VALUES ($1, $2)', [username, hashedPassword]);
-        res.status(201).send('ユーザー登録が完了しました');
+        
+        // 登録成功後にルート（トップページ）にリダイレクトする
+        res.redirect('/'); 
+
     } catch (err) {
         console.error('❌ Error registering user', err);
         res.status(500).send('ユーザー登録中にエラーが発生しました');
