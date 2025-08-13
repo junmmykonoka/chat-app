@@ -7,6 +7,15 @@ const bodyParser = require('body-parser');
 const app = express();
 const port = process.env.PORT || 3000;
 
+const session = require('express-session');
+
+// ... その他のuse設定の下に追記
+app.use(session({
+  secret: 'your-secret-key', // 任意の文字列を設定
+  resave: false,
+  saveUninitialized: true
+}));
+
 // --- 修正点1: 静的ファイルの配信をpublicディレクトリに設定 ---
 // この行を追加することで、publicフォルダ内のファイルが自動的に配信されます
 app.use(express.static(path.join(__dirname, 'public')));
