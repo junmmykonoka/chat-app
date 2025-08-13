@@ -2,13 +2,19 @@
 const express = require('express');
 const { Client } = require('pg');
 const path = require('path');
-
+const bcrypt = require('bcryptjs');
+const bodyParser = require('body-parser');
 const app = express();
-const port = process.env.PORT || 3000; // RenderではPORTを環境変数から取得
+const port = process.env.PORT || 3000;
+
+// --- 修正点1: 静的ファイルの配信をpublicディレクトリに設定 ---
+// この行を追加することで、publicフォルダ内のファイルが自動的に配信されます
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
-// DATABASE_URL が設定されているかチェック
 if (!process.env.DATABASE_URL) {
   console.error('❌ DATABASE_URL is not set.');
   process.exit(1);
@@ -28,10 +34,31 @@ client.connect()
     process.exit(1);
   });
 
-// 静的ファイルやHTMLの配信
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+// --- 修正点2: ルートエンドポイントの変更 ---
+// publicフォルダ内のindex.htmlが自動で配信されるため、この行は不要になります
+// app.get('/', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'index.html'));
+// });
+
+// --- 修正点3: /registerへのGETリクエストは不要 ---
+// app.get('/register', (req, res) => {
+//     res.sendFile(path.join(__dirname, 'public', 'register.html'));
+// });
+
+app.post('/register', async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        await client.query('INSERT INTO users (username, password_hash) VALUES ($1, $2)', [username, hashedPassword]);
+        res.status(201).send('ユーザー登録が完了しました');
+    } catch (err) {
+        console.error('❌ Error registering user', err);
+        res.status(500).send('ユーザー登録中にエラーが発生しました');
+    }
 });
+
+// ... 既存の /message と /messages エンドポイントはそのまま
 
 app.post('/message', async (req, res) => {
   const { message } = req.body;
