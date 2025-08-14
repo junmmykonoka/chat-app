@@ -17,11 +17,6 @@ app.use(session({
 
 // 静的ファイル配信
 app.use(express.static('public'));
-
-app.get('/login.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
-  });
-
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -56,6 +51,16 @@ const requireLogin = (req, res, next) => {
 // トップページへのアクセスにログインを要求
 app.get('/', requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ✅ ログインページへの明示的なルートを追加
+app.get('/login.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// ユーザー登録ページへの明示的なルートを追加
+app.get('/register.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'register.html'));
 });
 
 // ユーザー登録処理
