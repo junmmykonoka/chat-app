@@ -16,8 +16,8 @@ app.use(session({
   saveUninitialized: true
 }));
 
-// publicディレクトリ内の静的ファイルを配信
-app.use(express.static(path.join(__dirname, 'public')));
+// ✅ 修正後の静的ファイル配信
+app.use(express.static('public'));
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -48,19 +48,18 @@ app.post('/register', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
         await client.query('INSERT INTO users (username, password_hash) VALUES ($1, $2)', [username, hashedPassword]);
-        res.redirect('/'); 
+        res.redirect('/');
     } catch (err) {
         console.error('❌ Error registering user', err);
         res.status(500).send('ユーザー登録中にエラーが発生しました');
     }
 });
 
-// ✅ ログインエンドポイント（重複を解消）
+// ログインエンドポイント
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     try {
         console.log('Login attempt for user:', username);
-
         const result = await client.query('SELECT * FROM users WHERE username = $1', [username]);
         const user = result.rows[0];
 
