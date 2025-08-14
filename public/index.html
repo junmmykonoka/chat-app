@@ -16,24 +16,21 @@
     <script>
         // メッセージをサーバーから取得して画面に表示する関数
         async function fetchMessages() {
-            try {
-                const response = await fetch('/messages');
-                if (!response.ok) {
-                    throw new Error('メッセージの取得に失敗しました');
-                }
-                const messages = await response.json();
-                const messagesDiv = document.getElementById('messages');
-                messagesDiv.innerHTML = ''; // 一度画面をクリア
+        try {
+            const response = await fetch('/messages');
+            const messages = await response.json();
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = '';
 
-                messages.forEach(msg => {
-                    const p = document.createElement('p');
-                    p.textContent = msg.content;
-                    messagesDiv.appendChild(p);
-                });
-            } catch (error) {
-                console.error('❌ Error fetching messages:', error);
-            }
+            messages.forEach(msg => {
+                const p = document.createElement('p');
+                p.textContent = `${msg.username}: ${msg.content}`; // ユーザー名とメッセージを表示
+                messagesDiv.appendChild(p);
+            });
+        } catch (error) {
+            console.error('❌ Error fetching messages:', error);
         }
+    }
 
         // ページが読み込まれたときにメッセージを取得して表示
         fetchMessages();

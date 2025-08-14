@@ -101,29 +101,36 @@ app.post('/login', async (req, res) => {
 
 // メッセージ投稿
 app.post('/message', requireLogin, async (req, res) => {
-  const { message } = req.body;
-  try {
-    await client.query(
-      'INSERT INTO messages (content) VALUES ($1)',
-      [message]
-    );
-    res.status(201).send('メッセージが正常に投稿されました');
-  } catch (err) {
-    console.error('❌ Error saving message', err);
-    res.status(500).send('メッセージの投稿中にエラーが発生しました');
-  }
-});
+    const { message } = req.body;
+    const userId = req.session.userId; // ログインユーザーのIDを取得
+  
+    try {
+      await client.query(
+        'INSERT INTO messages (content, user_id) VALUES ($1, $2)',
+        [message, userId] // user_idも保存する
+      );
+      res.status(201).send('メッセージが正常に投稿されました');
+    } catch (err) {
+      console.error('❌ Error saving message', err);
+      res.status(500).send('メッセージの投稿中にエラーが発生しました');
+    }
+  });
 
 // メッセージ取得
 app.get('/messages', requireLogin, async (req, res) => {
-  try {
-    const result = await client.query('SELECT * FROM messages ORDER BY created_at ASC');
-    res.status(200).json(result.rows);
-  } catch (err) {
-    console.error('❌ Error fetching messages', err);
-    res.status(500).send('メッセージの取得中にエラーが発生しました');
-  }
-});
+    try {
+      const result = await client.query(
+        `SELECT m.content, u.username
+         FROM messages m
+         INNER JOIN users u ON m.user_id = u.id
+         ORDER BY m.created_at ASC`
+      );
+      res.status(200).json(result.rows);
+    } catch (err) {
+      console.error('❌ Error fetching messages', err);
+      res.status(500).send('メッセージの取得中にエラーが発生しました');
+    }
+  });
 
 // ログアウト
 app.get('/logout', (req, res) => {
