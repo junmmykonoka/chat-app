@@ -13,5 +13,64 @@
     <form id="form">
         <input id="input" autocomplete="off" /><button>送信</button>
     </form>
-    </body>
+    <script>
+        // メッセージをサーバーから取得して画面に表示する関数
+        async function fetchMessages() {
+            try {
+                const response = await fetch('/messages');
+                if (!response.ok) {
+                    throw new Error('メッセージの取得に失敗しました');
+                }
+                const messages = await response.json();
+                const messagesDiv = document.getElementById('messages');
+                messagesDiv.innerHTML = ''; // 一度画面をクリア
+
+                messages.forEach(msg => {
+                    const p = document.createElement('p');
+                    p.textContent = msg.content;
+                    messagesDiv.appendChild(p);
+                });
+            } catch (error) {
+                console.error('❌ Error fetching messages:', error);
+            }
+        }
+
+        // ページが読み込まれたときにメッセージを取得して表示
+        fetchMessages();
+        
+        // 5秒ごとにメッセージを自動更新する
+        setInterval(fetchMessages, 5000);
+
+        // フォームの送信処理
+        const form = document.getElementById('form');
+        const input = document.getElementById('input');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (input.value) {
+                try {
+                    const response = await fetch('/message', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ message: input.value })
+                    });
+                    if (!response.ok) {
+                        throw new Error('メッセージの投稿に失敗しました');
+                    }
+                    const result = await response.text();
+                    console.log(result);
+        
+                    input.value = '';
+    
+                    // メッセージ送信後に、再度メッセージ一覧を取得して画面を更新する
+                    fetchMessages();
+                } catch (error) {
+                    console.error('❌ Error posting message:', error);
+                }
+            }
+        });
+    </script>
+</body>
 </html>
