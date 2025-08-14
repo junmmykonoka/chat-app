@@ -15,7 +15,7 @@ app.use(session({
   saveUninitialized: true
 }));
 
-// 静的ファイル
+// 静的ファイル配信
 app.use(express.static('public'));
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -39,7 +39,7 @@ client.connect()
     process.exit(1);
   });
 
-// ユーザー登録
+// ユーザー登録処理
 app.post('/register', async (req, res) => {
   const { username, password } = req.body;
   try {
@@ -49,32 +49,24 @@ app.post('/register', async (req, res) => {
       'INSERT INTO users (username, password_hash) VALUES ($1, $2)',
       [username, hashedPassword]
     );
-    res.redirect('/login'); // 登録後はログインページへ
+    res.redirect('/');
   } catch (err) {
     console.error('❌ Error registering user', err);
     res.status(500).send('ユーザー登録中にエラーが発生しました');
   }
 });
 
-// ログインページ（GET）
-app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
-
-// ログイン処理（POST）
+// ログイン処理
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
   try {
-    console.log('Login attempt for user:', username);
     const result = await client.query('SELECT * FROM users WHERE username = $1', [username]);
     const user = result.rows[0];
 
     if (user && await bcrypt.compare(password, user.password_hash)) {
-      console.log('Authentication successful for user:', username);
       req.session.userId = user.id;
-      res.redirect('/'); // ログイン成功後トップページへ
+      res.redirect('/');
     } else {
-      console.log('Authentication failed for user:', username);
       res.status(401).send('ログイン失敗: ユーザー名またはパスワードが間違っています。');
     }
   } catch (err) {
