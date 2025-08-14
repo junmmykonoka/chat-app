@@ -75,6 +75,20 @@ app.post('/login', async (req, res) => {
   }
 });
 
+app.post('/message', async (req, res) => {
+    const { message } = req.body;
+    try {
+      await client.query(
+        'INSERT INTO messages (content) VALUES ($1)',
+        [message]
+      );
+      res.status(201).send('メッセージが正常に投稿されました');
+    } catch (err) {
+      console.error('❌ Error saving message', err);
+      res.status(500).send('メッセージの投稿中にエラーが発生しました');
+    }
+  });
+  
 // メッセージ取得
 app.get('/messages', async (req, res) => {
   try {
