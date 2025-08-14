@@ -70,17 +70,50 @@ app.post('/register', async (req, res) => {
     }
 });
 
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        const result = await client.query('SELECT * FROM users WHERE username = $1', [username]);
+        const user = result.rows[0];
+
+        if (user && await bcrypt.compare(password, user.password_hash)) {
+            // 認証成功
+            req.session.userId = user.id; // セッションにユーザーIDを保存
+            res.redirect('/'); // トップページにリダイレクト
+        } else {
+            // 認証失敗
+            res.status(401).send('ログイン失敗: ユーザー名またはパスワードが間違っています。');
+        }
+    } catch (err) {
+        console.error('❌ Error during login', err);
+        res.status(500).send('ログイン中にエラーが発生しました');
+    }
+});
+
 // ... 既存の /message と /messages エンドポイントはそのまま
 
-app.post('/message', async (req, res) => {
-  const { message } = req.body;
-  try {
-    await client.query('INSERT INTO messages (content) VALUES ($1)', [message]);
-    res.status(200).send('メッセージをデータベースに保存しました');
-  } catch (err) {
-    console.error('❌ Error inserting message', err);
-    res.status(500).send('メッセージの保存中にエラーが発生しました');
-  }
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        console.log('Login attempt for user:', username); // ① ログイン試行をログに出力
+
+        const result = await client.query('SELECT * FROM users WHERE username = $1', [username]);
+        const user = result.rows[0];
+
+        if (user && await bcrypt.compare(password, user.password_hash)) {
+            // 認証成功
+            console.log('Authentication successful for user:', username); // ② 成功時にログに出力
+            req.session.userId = user.id;
+            res.redirect('/');
+        } else {
+            // 認証失敗
+            console.log('Authentication failed for user:', username); // ③ 失敗時にログに出力
+            res.status(401).send('ログイン失敗: ユーザー名またはパスワードが間違っています。');
+        }
+    } catch (err) {
+        console.error('❌ Error during login', err);
+        res.status(500).send('ログイン中にエラーが発生しました');
+    }
 });
 
 app.get('/messages', async (req, res) => {
