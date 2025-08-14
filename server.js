@@ -17,6 +17,11 @@ app.use(session({
 
 // 静的ファイル配信
 app.use(express.static('public'));
+
+app.get('/login.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+  });
+
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -39,6 +44,20 @@ client.connect()
     process.exit(1);
   });
 
+// ログイン確認のミドルウェア
+const requireLogin = (req, res, next) => {
+  if (req.session.userId) {
+    next();
+  } else {
+    res.redirect('/login.html');
+  }
+};
+
+// トップページへのアクセスにログインを要求
+app.get('/', requireLogin, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // ユーザー登録処理
 app.post('/register', async (req, res) => {
   const { username, password } = req.body;
@@ -49,7 +68,7 @@ app.post('/register', async (req, res) => {
       'INSERT INTO users (username, password_hash) VALUES ($1, $2)',
       [username, hashedPassword]
     );
-    res.redirect('/login.html'); // 登録後はログインページへリダイレクト
+    res.redirect('/login.html');
   } catch (err) {
     console.error('❌ Error registering user', err);
     res.status(500).send('ユーザー登録中にエラーが発生しました');
@@ -65,7 +84,7 @@ app.post('/login', async (req, res) => {
 
     if (user && await bcrypt.compare(password, user.password_hash)) {
       req.session.userId = user.id;
-      res.redirect('/'); // ログイン成功後トップページへ
+      res.redirect('/');
     } else {
       res.status(401).send('ログイン失敗: ユーザー名またはパスワードが間違っています。');
     }
@@ -75,22 +94,23 @@ app.post('/login', async (req, res) => {
   }
 });
 
-app.post('/message', async (req, res) => {
-    const { message } = req.body;
-    try {
-      await client.query(
-        'INSERT INTO messages (content) VALUES ($1)',
-        [message]
-      );
-      res.status(201).send('メッセージが正常に投稿されました');
-    } catch (err) {
-      console.error('❌ Error saving message', err);
-      res.status(500).send('メッセージの投稿中にエラーが発生しました');
-    }
-  });
-  
+// メッセージ投稿
+app.post('/message', requireLogin, async (req, res) => {
+  const { message } = req.body;
+  try {
+    await client.query(
+      'INSERT INTO messages (content) VALUES ($1)',
+      [message]
+    );
+    res.status(201).send('メッセージが正常に投稿されました');
+  } catch (err) {
+    console.error('❌ Error saving message', err);
+    res.status(500).send('メッセージの投稿中にエラーが発生しました');
+  }
+});
+
 // メッセージ取得
-app.get('/messages', async (req, res) => {
+app.get('/messages', requireLogin, async (req, res) => {
   try {
     const result = await client.query('SELECT * FROM messages ORDER BY created_at ASC');
     res.status(200).json(result.rows);
@@ -98,6 +118,16 @@ app.get('/messages', async (req, res) => {
     console.error('❌ Error fetching messages', err);
     res.status(500).send('メッセージの取得中にエラーが発生しました');
   }
+});
+
+// ログアウト
+app.get('/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      return res.status(500).send('ログアウト中にエラーが発生しました');
+    }
+    res.redirect('/login.html');
+  });
 });
 
 // サーバー起動
