@@ -1,27 +1,27 @@
-// server.js
 const express = require('express');
 const { Client } = require('pg');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const bodyParser = require('body-parser');
+const session = require('express-session');
+
 const app = express();
 const port = process.env.PORT || 3000;
 
-const session = require('express-session');
-
-// `express-session`の設定
+// セッション設定
 app.use(session({
   secret: 'your-secret-key',
   resave: false,
   saveUninitialized: true
 }));
 
-// ✅ 修正後の静的ファイル配信
+// 静的ファイル
 app.use(express.static('public'));
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+// DB接続
 if (!process.env.DATABASE_URL) {
   console.error('❌ DATABASE_URL is not set.');
   process.exit(1);
@@ -29,9 +29,7 @@ if (!process.env.DATABASE_URL) {
 
 const client = new Client({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  ssl: { rejectUnauthorized: false }
 });
 
 client.connect()
@@ -41,43 +39,51 @@ client.connect()
     process.exit(1);
   });
 
-// ユーザー登録エンドポイント
+// ユーザー登録
 app.post('/register', async (req, res) => {
-    const { username, password } = req.body;
-    try {
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-        await client.query('INSERT INTO users (username, password_hash) VALUES ($1, $2)', [username, hashedPassword]);
-        res.redirect('/');
-    } catch (err) {
-        console.error('❌ Error registering user', err);
-        res.status(500).send('ユーザー登録中にエラーが発生しました');
-    }
+  const { username, password } = req.body;
+  try {
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    await client.query(
+      'INSERT INTO users (username, password_hash) VALUES ($1, $2)',
+      [username, hashedPassword]
+    );
+    res.redirect('/login'); // 登録後はログインページへ
+  } catch (err) {
+    console.error('❌ Error registering user', err);
+    res.status(500).send('ユーザー登録中にエラーが発生しました');
+  }
 });
 
-// ログインエンドポイント
+// ログインページ（GET）
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// ログイン処理（POST）
 app.post('/login', async (req, res) => {
-    const { username, password } = req.body;
-    try {
-        console.log('Login attempt for user:', username);
-        const result = await client.query('SELECT * FROM users WHERE username = $1', [username]);
-        const user = result.rows[0];
+  const { username, password } = req.body;
+  try {
+    console.log('Login attempt for user:', username);
+    const result = await client.query('SELECT * FROM users WHERE username = $1', [username]);
+    const user = result.rows[0];
 
-        if (user && await bcrypt.compare(password, user.password_hash)) {
-            console.log('Authentication successful for user:', username);
-            req.session.userId = user.id;
-            res.redirect('/');
-        } else {
-            console.log('Authentication failed for user:', username);
-            res.status(401).send('ログイン失敗: ユーザー名またはパスワードが間違っています。');
-        }
-    } catch (err) {
-        console.error('❌ Error during login', err);
-        res.status(500).send('ログイン中にエラーが発生しました');
+    if (user && await bcrypt.compare(password, user.password_hash)) {
+      console.log('Authentication successful for user:', username);
+      req.session.userId = user.id;
+      res.redirect('/'); // ログイン成功後トップページへ
+    } else {
+      console.log('Authentication failed for user:', username);
+      res.status(401).send('ログイン失敗: ユーザー名またはパスワードが間違っています。');
     }
+  } catch (err) {
+    console.error('❌ Error during login', err);
+    res.status(500).send('ログイン中にエラーが発生しました');
+  }
 });
 
-// メッセージ取得エンドポイント
+// メッセージ取得
 app.get('/messages', async (req, res) => {
   try {
     const result = await client.query('SELECT * FROM messages ORDER BY created_at ASC');
@@ -88,6 +94,7 @@ app.get('/messages', async (req, res) => {
   }
 });
 
+// サーバー起動
 app.listen(port, () => {
   console.log(`🚀 Server listening at http://localhost:${port}`);
 });
