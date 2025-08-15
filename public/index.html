@@ -1,10 +1,19 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>チャットアプリ</title>
-</head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>チャットアプリ</title>
+        <style>
+            #messages {
+                max-height: 400px; /* 表示する高さの上限を設定 */
+                overflow-y: auto;  /* 高さが上限を超えたらスクロール可能にする */
+                border: 1px solid #ccc;
+                padding: 10px;
+                margin-bottom: 10px;
+            }
+        </style>
+    </head>
 <body>
     <h1>シンプルなチャットアプリ</h1>
     <p><a href="/register.html">ユーザー登録はこちら</a></p>
@@ -16,21 +25,25 @@
     <script>
         // メッセージをサーバーから取得して画面に表示する関数
         async function fetchMessages() {
-        try {
-            const response = await fetch('/messages');
-            const messages = await response.json();
-            const messagesDiv = document.getElementById('messages');
-            messagesDiv.innerHTML = '';
+    try {
+        const response = await fetch('/messages');
+        const messages = await response.json();
+        const messagesDiv = document.getElementById('messages');
+        messagesDiv.innerHTML = '';
 
-            messages.forEach(msg => {
-                const p = document.createElement('p');
-                p.textContent = `${msg.username}: ${msg.content}`; // ユーザー名とメッセージを表示
-                messagesDiv.appendChild(p);
-            });
-        } catch (error) {
-            console.error('❌ Error fetching messages:', error);
-        }
+        messages.forEach(msg => {
+            const p = document.createElement('p');
+            p.textContent = `${msg.username}: ${msg.content}`;
+            messagesDiv.appendChild(p);
+        });
+
+        // チャットを一番下までスクロールするコード
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+    } catch (error) {
+        console.error('❌ Error fetching messages:', error);
     }
+}
 
         // ページが読み込まれたときにメッセージを取得して表示
         fetchMessages();
