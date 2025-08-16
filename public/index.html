@@ -18,6 +18,11 @@
                 padding: 10px;
                 margin-bottom: 10px;
             }
+            form button {
+            padding: 15px 30px; /* ボタンの大きさを調整 */
+            font-size: 18px;    /* 文字の大きさを調整 */
+            cursor: pointer;
+        }
         </style>
     </head>
 <body>
@@ -29,7 +34,7 @@
     <p><a href="/login.html">ログインはこちら</a></p>
     <div id="messages"></div>
     <form id="form">
-        <input id="input" autocomplete="off" style="width: 600px; height: 60px;" /><button>送信</button>
+        <input id="input" autocomplete="off" style="width: 500px; height: 40px;" /><button>送信</button>
     </form>
     <script>
         // メッセージをサーバーから取得して画面に表示する関数
