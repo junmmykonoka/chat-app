@@ -46,10 +46,12 @@
         messagesDiv.innerHTML = '';
 
         messages.forEach(msg => {
-            const p = document.createElement('p');
-            p.textContent = `${msg.username}: ${msg.content}`;
-            messagesDiv.appendChild(p);
-        });
+    const p = document.createElement('p');
+    // タイムスタンプを整形
+    const timestamp = new Date(msg.created_at).toLocaleString();
+    p.textContent = `${msg.username}: ${msg.content} (${timestamp})`;
+    messagesDiv.appendChild(p);
+});
 
         // チャットを一番下までスクロールするコード
         messagesDiv.scrollTop = messagesDiv.scrollHeight;

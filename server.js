@@ -120,7 +120,7 @@ app.post('/message', requireLogin, async (req, res) => {
 app.get('/messages', requireLogin, async (req, res) => {
     try {
       const result = await client.query(
-        `SELECT m.content, u.username
+        `SELECT m.content, u.username, m.created_at
          FROM messages m
          INNER JOIN users u ON m.user_id = u.id
          ORDER BY m.created_at ASC`
